@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luyện Tập Bài 30: Thực Hành Xác Định Động Lượng Trước Và Sau Va Chạm</title>
+    <!-- Tích hợp MathJax chuẩn Mathtype -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --primary: #1e40af;
+            --primary-light: #dbeafe;
+            --success: #16a34a;
+            --success-bg: #dcfce7;
+            --danger: #dc2626;
+            --danger-bg: #fee2e2;
+            --warning: #d97706;
+            --warning-bg: #fef3c7;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #0f172a;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); line-height: 1.6; padding-bottom: 60px; }
+        
+        /* Header & Top Controls */
+        header {
+            background: linear-gradient(135deg, #1e3a8a, #2563eb);
+            color: white;
+            padding: 20px 15px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        header h1 { font-size: 1.4rem; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        header p { font-size: 0.95rem; opacity: 0.9; }
+
+        .container { max-width: 920px; margin: 20px auto; padding: 0 15px; }
+
+        /* 3 Cụm Nút / Ô nhập chính theo yêu cầu */
+        .control-bar {
+            background: var(--card);
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: grid;
+            grid-template-columns: 1fr 1.5fr 1fr;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 20px;
+            border: 2px solid #cbd5e1;
+        }
+        @media (max-width: 768px) {
+            .control-bar { grid-template-columns: 1fr; }
+        }
+        .student-inputs {
+            display: flex;
+            gap: 8px;
+        }
+        .student-inputs input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #94a3b8;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border 0.2s;
+        }
+        .student-inputs input:focus { border-color: var(--primary); }
+
+        .btn {
+            padding: 11px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn:active { transform: scale(0.97); }
+        .btn-sound { background: #8b5cf6; color: white; }
+        .btn-sound.muted { background: #64748b; }
+        .btn-report { background: var(--success); color: white; }
+        .btn-report:hover { background: #15803d; }
+
+        /* Tabs Cấp độ */
+        .level-tabs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+        .tab-btn {
+            background: #e2e8f0;
+            color: #475569;
+            padding: 14px 10px;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            transition: 0.2s;
+            position: relative;
+        }
+        .tab-btn.active {
+            background: var(--primary-light);
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+        .tab-btn.locked {
+            background: #f1f5f9;
+            color: #94a3b8;
+            border: 2px dashed #cbd5e1;
+        }
+        .badge {
+            display: inline-block;
+            font-size: 0.78rem;
+            padding: 2px 8px;
+            border-radius: 99px;
+            margin-top: 4px;
+            background: #cbd5e1;
+            color: #1e293b;
+        }
+        .tab-btn.active .badge { background: var(--primary); color: white; }
+
+        /* Thanh trạng thái tiến độ & Chế độ GV */
+        .status-banner {
+            background: var(--warning-bg);
+            border-left: 5px solid var(--warning);
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .teacher-box {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .teacher-box input[type="password"] {
+            width: 115px;
+            padding: 6px 10px;
+            border: 1px solid #94a3b8;
+            border-radius: 6px;
+            font-weight: bold;
+            text-align: center;
+            letter-spacing: 3px;
+             -webkit-text-security: disc;
+        }
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            background: #334155;
+            color: white;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-retry {
+            background: var(--primary);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* Card câu hỏi */
+        .question-card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            border: 1px solid #e2e8f0;
+        }
+        .q-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .q-text { font-size: 1.05rem; margin-bottom: 14px; font-weight: 500; }
+        .svg-container {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px;
+            margin: 12px 0 16px 0;
+            text-align: center;
+            overflow-x: auto;
+        }
+        
+        /* Bảng số liệu thực hành trong câu hỏi */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 0.92rem;
+            text-align: center;
+        }
+        .data-table th, .data-table td {
+            border: 1px solid #94a3b8;
+            padding: 8px 6px;
+        }
+        .data-table th { background: #e2e8f0; font-weight: 700; }
+        .data-table tr:nth-child(even) { background: #f8fafc; }
+
+        /* Các lựa chọn đáp án */
+        .options-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        @media (max-width: 640px) { .options-list { grid-template-columns: 1fr; } }
+
+        .option-btn {
+            background: #f8fafc;
+            border: 2px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 12px 14px;
+            text-align: left;
+            font-size: 0.98rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .option-btn:hover:not(:disabled) {
+            border-color: var(--primary);
+            background: #eff6ff;
+        }
+        .option-btn:disabled { cursor: default; }
+        .option-btn.correct {
+            background: var(--success-bg) !important;
+            border-color: var(--success) !important;
+            color: #065f46;
+            font-weight: 700;
+        }
+        .option-btn.wrong {
+            background: var(--danger-bg) !important;
+            border-color: var(--danger) !important;
+            color: #991b1b;
+        }
+        .opt-letter {
+            min-width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+        .option-btn.correct .opt-letter { background: var(--success); color: white; }
+        .option-btn.wrong .opt-letter { background: var(--danger); color: white; }
+
+        /* Giải thích hiện ngay sau khi chọn */
+        .feedback-box {
+            margin-top: 14px;
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            display: none;
+        }
+        .feedback-box.show { display: block; animation: fadeIn 0.25s ease-in; }
+        .feedback-box.ok { background: var(--success-bg); border-left: 4px solid var(--success); color: #064e3b; }
+        .feedback-box.err { background: var(--danger-bg); border-left: 4px solid var(--danger); color: #7f1d1d; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Modal báo cáo kết quả */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.65);
+            display: none; align-items: center; justify-content: center;
+            z-index: 1000; padding: 15px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-card {
+            background: white;
+            max-width: 520px;
+            width: 100%;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+            text-align: center;
+        }
+        .modal-card h2 { color: var(--primary); margin-bottom: 12px; }
+        .report-box {
+            background: #f8fafc;
+            border: 2px dashed #94a3b8;
+            border-radius: 10px;
+            padding: 16px;
+            text-align: left;
+            margin: 15px 0;
+            font-size: 0.98rem;
+        }
+        .report-box p { margin: 6px 0; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>BÀI 30: THỰC HÀNH XÁC ĐỊNH ĐỘNG LƯỢNG CỦA VẬT TRƯỚC VÀ SAU VA CHẠM</h1>
+    <p> Đề luyện tập tương tác tại nhà – Tự động đảo câu hỏi & vị trí đáp án </p>
+</header>
+
+<div class="container">
+    <!-- 3 NÚT / Ô CHỨC NĂNG RÕ RÀNG THEO YÊU CẦU -->
+    <div class="control-bar">
+        <!-- 1. Nút âm thanh vui nhộn, bất ngờ -->
+        <button id="btnSound" class="btn btn-sound" onclick="toggleSound()">
+            🔊 Âm thanh: BẬT (Vui nhộn)
+        </button>
+
+        <!-- 2. Ô nhập họ tên, lớp -->
+        <div class="student-inputs">
+            <input type="text" id="studentName" placeholder="Nhập Họ và tên học sinh...">
+            <input type="text" id="studentClass" placeholder="Lớp (VD: 10A1)" style="max-width: 140px;">
+        </div>
+
+        <!-- 3. Nút báo họ tên, kết quả thực hiện -->
+        <button class="btn btn-report" onclick="showReportModal()">
+            🏆 Báo Họ Tên & Kết Quả
+        </button>
+    </div>
+
+    <!-- CÁC TAB CẤP ĐỘ -->
+    <div class="level-tabs">
+        <div id="tab1" class="tab-btn active" onclick="switchLevel(1)">
+            <div>CẤP ĐỘ 1 (Nhận biết - 12 câu)</div>
+            <span class="badge" id="badge1">Đạt 12/12: 0/3 lần</span>
+        </div>
+        <div id="tab2" class="tab-btn locked" onclick="switchLevel(2)">
+            <div>🔒 CẤP ĐỘ 2 (7 - 8 Điểm: 5 câu)</div>
+            <span class="badge" id="badge2">Chưa mở khóa</span>
+        </div>
+        <div id="tab3" class="tab-btn locked" onclick="switchLevel(3)">
+            <div>🔒 CẤP ĐỘ 3 (9 - 10 Điểm: 5 câu)</div>
+            <span class="badge" id="badge3">Chưa mở khóa</span>
+        </div>
+    </div>
+
+    <!-- THANH TRẠNG THÁI & MỞ KHÓA GIÁO VIÊN (ẨN MÃ DẠNG ****) -->
+    <div class="status-banner">
+        <div>
+            <strong id="statusTitle">📌 Nhiệm vụ Cấp độ 1:</strong>
+            <span id="statusDesc">Làm hết 12 câu và đạt đúng 12/12 đủ <b>3 lần</b> để mở khóa Cấp độ 2 & 3!</span>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <button class="btn-retry" onclick="retryCurrentLevel()">🔄 Đảo đề & Làm lại Cấp độ này</button>
+            <div class="teacher-box">
+                <input type="password" id="teacherCode" placeholder="****" autocomplete="off" title="Nhập mã Giáo viên">
+                <button class="btn-sm" onclick="unlockByTeacher()">🔑 Mở khóa GV</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- VÙNG HIỂN THỊ DANH SÁCH CÂU HỎI -->
+    <div id="quizArea"></div>
+</div>
+
+<!-- MODAL BÁO CÁO KẾT QUẢ -->
+<div id="reportModal" class="modal-overlay">
+    <div class="modal-card">
+        <h2>📋 PHIẾU BÁO CÁO KẾT QUẢ HỌC TẬP</h2>
+        <div class="report-box" id="reportContent"></div>
+        <div style="display:flex; gap:10px; justify-content:center;">
+            <button class="btn btn-report" onclick="copyReport()">📋 Sao chép gửi Giáo viên</button>
+            <button class="btn" style="background:#64748b; color:white;" onclick="closeReportModal()">Đóng</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/* =========================================================================
+   1. HỆ THỐNG ÂM THANH VUI NHỘN, BẤT NGỜ (WEB AUDIO SYNTHESIS)
+   ========================================================================= */
+let soundEnabled = true;
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function initAudio() {
+    if (!audioCtx) audioCtx = new AudioCtx();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function toggleSound() {
+    soundEnabled = !soundEnabled;
+    const btn = document.getElementById('btnSound');
+    if (soundEnabled) {
+        btn.innerHTML = '🔊 Âm thanh: BẬT (Vui nhộn)';
+        btn.classList.remove('muted');
+        playFunnySound(true);
+    } else {
+        btn.innerHTML = '🔇 Âm thanh: ĐÃ TẮT';
+        btn.classList.add('muted');
+    }
+}
+
+function playFunnySound(isCorrect) {
+    if (!soundEnabled) return;
+    initAudio();
+    const now = audioCtx.currentTime;
+
+    if (isCorrect) {
+        const style = Math.random() > 0.5 ? 1 : 2;
+        if (style === 1) {
+            const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+            notes.forEach((freq, idx) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, now + idx * 0.065);
+                gain.gain.setValueAtTime(0.22, now + idx * 0.065);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.065 + 0.22);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now + idx * 0.065);
+                osc.stop(now + idx * 0.065 + 0.23);
+            });
+        } else {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(400, now);
+            osc.frequency.exponentialRampToValueAtTime(1200, now + 0.18);
+            osc.frequency.setValueAtTime(900, now + 0.2);
+            osc.frequency.exponentialRampToValueAtTime(1500, now + 0.4);
+            gain.gain.setValueAtTime(0.25, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.42);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.43);
+        }
+    } else {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.linearRampToValueAtTime(140, now + 0.2);
+        osc.frequency.linearRampToValueAtTime(220, now + 0.28);
+        osc.frequency.linearRampToValueAtTime(95, now + 0.55);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.008, now + 0.56);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.57);
+    }
+}
+
+/* =========================================================================
+   2. KHO HÌNH VẼ SVG MINH HỌA SINH ĐỘNG, VECTƠ & ĐỒ THỊ CHUẨN XÁC
+   ========================================================================= */
+const SVGs = {
+    airTrackSetup: `
+    <svg viewBox="0 0 680 200" width="100%" style="max-width:640px;">
+        <defs>
+            <marker id="arrowBlue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#2563eb"/>
+            </marker>
+        </defs>
+        <rect x="20" y="165" width="640" height="12" fill="#94a3b8" rx="4"/>
+        <rect x="35" y="100" width="65" height="55" fill="#1e293b" rx="6"/>
+        <text x="67" y="130" fill="white" font-size="11" font-weight="bold" text-anchor="middle">Bơm khí</text>
+        <path d="M 100 125 Q 120 125 130 140" stroke="#475569" stroke-width="5" fill="none"/>
+        <rect x="125" y="135" width="510" height="18" fill="#cbd5e1" stroke="#475569" stroke-width="2"/>
+        <line x1="130" y1="153" x2="130" y2="165" stroke="#334155" stroke-width="4"/>
+        <line x1="620" y1="153" x2="620" y2="165" stroke="#334155" stroke-width="4"/>
+        <rect x="170" y="110" width="65" height="25" fill="#2563eb" rx="4"/>
+        <rect x="192" y="88" width="22" height="22" fill="#0f172a"/>
+        <text x="202" y="127" fill="white" font-size="12" font-weight="bold" text-anchor="middle">Xe 1 (m₁)</text>
+        <line x1="240" y1="122" x2="285" y2="122" stroke="#2563eb" stroke-width="3" marker-end="url(#arrowBlue)"/>
+        <text x="262" y="114" fill="#1d4ed8" font-size="13" font-weight="bold" text-anchor="middle">v₁</text>
+        <rect x="305" y="65" width="12" height="70" fill="#dc2626"/>
+        <circle cx="311" cy="78" r="4" fill="#fef08a"/>
+        <text x="311" y="55" fill="#dc2626" font-size="12" font-weight="bold" text-anchor="middle">Cổng quang 1</text>
+        <rect x="385" y="110" width="65" height="25" fill="#16a34a" rx="4"/>
+        <rect x="407" y="88" width="22" height="22" fill="#0f172a"/>
+        <text x="417" y="127" fill="white" font-size="12" font-weight="bold" text-anchor="middle">Xe 2 (m₂)</text>
+        <rect x="515" y="65" width="12" height="70" fill="#dc2626"/>
+        <circle cx="521" cy="78" r="4" fill="#fef08a"/>
+        <text x="521" y="55" fill="#dc2626" font-size="12" font-weight="bold" text-anchor="middle">Cổng quang 2</text>
+        <rect x="370" y="12" width="110" height="42" fill="#1e293b" rx="6"/>
+        <rect x="380" y="19" width="62" height="26" fill="#86efac" rx="3"/>
+        <text x="411" y="37" fill="#064e3b" font-family="monospace" font-size="15" font-weight="bold" text-anchor="middle">0.000</text>
+        <circle cx="460" cy="32" r="8" fill="#ef4444"/>
+        <text x="460" y="35" fill="white" font-size="7" font-weight="bold" text-anchor="middle">RESET</text>
+    </svg>`,
+
+    lightGateDetail: `
+    <svg viewBox="0 0 500 165" width="100%" style="max-width:460px;">
+        <defs>
+            <marker id="arrD" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#0f172a"/>
+            </marker>
+        </defs>
+        <rect x="40" y="125" width="420" height="14" fill="#cbd5e1" stroke="#64748b"/>
+        <rect x="140" y="90" width="120" height="35" fill="#2563eb" rx="5"/>
+        <text x="200" y="112" fill="white" font-weight="bold" font-size="13" text-anchor="middle">Xe trượt</text>
+        <rect x="160" y="48" width="80" height="42" fill="#1e293b" rx="3"/>
+        <text x="200" y="73" fill="#fde047" font-size="12" font-weight="bold" text-anchor="middle">Tấm cản quang</text>
+        <line x1="160" y1="22" x2="160" y2="48" stroke="#64748b" stroke-dasharray="3,3"/>
+        <line x1="240" y1="22" x2="240" y2="48" stroke="#64748b" stroke-dasharray="3,3"/>
+        <line x1="164" y1="30" x2="236" y2="30" stroke="#0f172a" stroke-width="2" marker-start="url(#arrD)" marker-end="url(#arrD)"/>
+        <text x="200" y="24" fill="#0f172a" font-weight="bold" font-size="13" text-anchor="middle">s = 0,1 m</text>
+        <path d="M 320 40 L 320 125 L 336 125 L 336 40 Z" fill="#dc2626"/>
+        <circle cx="328" cy="65" r="5" fill="#fef08a"/>
+        <text x="328" y="30" fill="#dc2626" font-weight="bold" font-size="12" text-anchor="middle">Tia hồng ngoại</text>
+        <text x="395" y="88" fill="#1e40af" font-weight="bold" font-size="13">v = s / t</text>
+    </svg>`,
+
+    softCollisionVectors: `
+    <svg viewBox="0 0 600 140" width="100%" style="max-width:540px;">
+        <defs>
+            <marker id="vecArr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#dc2626"/>
+            </marker>
+        </defs>
+        <text x="135" y="22" fill="#1e3a8a" font-weight="bold" font-size="13" text-anchor="middle">TRƯỚC VA CHẠM MỀM</text>
+        <rect x="35" y="65" width="55" height="30" fill="#2563eb" rx="4"/>
+        <text x="62" y="85" fill="white" font-weight="bold" font-size="12" text-anchor="middle">m₁</text>
+        <line x1="90" y1="80" x2="145" y2="80" stroke="#dc2626" stroke-width="3" marker-end="url(#vecArr)"/>
+        <text x="118" y="70" fill="#dc2626" font-weight="bold" font-size="13" text-anchor="middle">v₁</text>
+        <rect x="170" y="65" width="55" height="30" fill="#16a34a" rx="4"/>
+        <text x="197" y="85" fill="white" font-weight="bold" font-size="12" text-anchor="middle">m₂ (v₂=0)</text>
+        <line x1="20" y1="96" x2="255" y2="96" stroke="#475569" stroke-width="3"/>
+        <text x="295" y="85" font-size="22" font-weight="bold" fill="#475569">⇒</text>
+        <text x="450" y="22" fill="#1e3a8a" font-weight="bold" font-size="13" text-anchor="middle">SAU VA CHẠM MỀM (Dính nhau)</text>
+        <rect x="345" y="65" width="55" height="30" fill="#2563eb" rx="2"/>
+        <rect x="401" y="65" width="55" height="30" fill="#16a34a" rx="2"/>
+        <text x="400" y="55" fill="#0f172a" font-weight="bold" font-size="12" text-anchor="middle">Chốt ghim dính chặt (m₁ + m₂)</text>
+        <line x1="456" y1="80" x2="535" y2="80" stroke="#dc2626" stroke-width="3" marker-end="url(#vecArr)"/>
+        <text x="498" y="70" fill="#dc2626" font-weight="bold" font-size="13" text-anchor="middle">v'₁ = v'₂</text>
+        <line x1="330" y1="96" x2="575" y2="96" stroke="#475569" stroke-width="3"/>
+    </svg>`,
+
+    elasticCollisionVectors: `
+    <svg viewBox="0 0 600 145" width="100%" style="max-width:550px;">
+        <defs>
+            <marker id="arrR" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#2563eb"/>
+            </marker>
+            <marker id="arrL" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#dc2626"/>
+            </marker>
+        </defs>
+        <text x="300" y="22" fill="#1e3a8a" font-weight="bold" font-size="13" text-anchor="middle">THÍ NGHIỆM LÒ XO BUNG RA (VA CHẠM ĐÀN HỒI)</text>
+        <line x1="80" y1="45" x2="520" y2="45" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#arrR)"/>
+        <text x="535" y="49" fill="#2563eb" font-weight="bold" font-size="13">(+)</text>
+        <rect x="175" y="75" width="65" height="32" fill="#16a34a" rx="4"/>
+        <text x="207" y="95" fill="white" font-weight="bold" font-size="13" text-anchor="middle">Xe 2 (m₂)</text>
+        <line x1="175" y1="91" x2="95" y2="91" stroke="#dc2626" stroke-width="3.5" marker-end="url(#arrL)"/>
+        <text x="132" y="80" fill="#dc2626" font-weight="bold" font-size="13" text-anchor="middle">v'₂ (&lt; 0)</text>
+        <path d="M 245 91 L 258 80 L 270 102 L 282 80 L 294 102 L 306 80 L 318 91" stroke="#d97706" stroke-width="3" fill="none"/>
+        <rect x="325" y="75" width="65" height="32" fill="#2563eb" rx="4"/>
+        <text x="357" y="95" fill="white" font-weight="bold" font-size="13" text-anchor="middle">Xe 1 (m₁)</text>
+        <line x1="390" y1="91" x2="480" y2="91" stroke="#2563eb" stroke-width="3.5" marker-end="url(#arrR)"/>
+        <text x="435" y="80" fill="#2563eb" font-weight="bold" font-size="13" text-anchor="middle">v'₁ (&gt; 0)</text>
+        <line x1="60" y1="108" x2="540" y2="108" stroke="#475569" stroke-width="3"/>
+    </svg>`,
+
+    graphXT: `
+    <svg viewBox="0 0 460 250" width="100%" style="max-width:430px;">
+        <defs>
+            <marker id="axisArr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#0f172a"/>
+            </marker>
+        </defs>
+        <line x1="55" y1="210" x2="420" y2="210" stroke="#0f172a" stroke-width="2" marker-end="url(#axisArr)"/>
+        <line x1="55" y1="210" x2="55" y2="20" stroke="#0f172a" stroke-width="2" marker-end="url(#axisArr)"/>
+        <text x="425" y="225" font-weight="bold" font-size="13">t (s)</text>
+        <text x="20" y="25" font-weight="bold" font-size="13">s (m)</text>
+        <text x="42" y="225" font-weight="bold" font-size="12">O</text>
+        <!-- Đường gióng tọa độ: t = 0,2 s, s = 0,10 m -->
+        <line x1="210" y1="210" x2="210" y2="100" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4,4"/>
+        <line x1="55" y1="100" x2="210" y2="100" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4,4"/>
+        <text x="210" y="228" font-size="12" font-weight="bold" text-anchor="middle" fill="#1e40af">0,20</text>
+        <text x="48" y="104" font-size="12" font-weight="bold" text-anchor="end" fill="#1e40af">0,10</text>
+        <!-- Đường biểu diễn -->
+        <line x1="55" y1="210" x2="210" y2="100" stroke="#2563eb" stroke-width="3.5"/>
+        <circle cx="210" cy="100" r="5" fill="#dc2626"/>
+        <text x="220" y="95" fill="#1e40af" font-size="12" font-weight="bold">Điểm đọc (0,20 s ; 0,10 m)</text>
+    </svg>`
+};
+
+/* =========================================================================
+   3. NGÂN HÀNG CÂU HỎI BÁM SÁT BÀI 30
+      - CẤP 1: 12 CÂU NHẬN BIẾT ĐƠN GIẢN
+      - CẤP 2 & 3: CÂU THÔNG HIỂU CƠ BẢN, SỐ LIỆU ĐƠN GIẢN DỄ TÍNH
+   ========================================================================= */
+const questionBank = {
+    // ================= CẤP ĐỘ 1: 12 CÂU NHẬN BIẾT ĐƠN GIẢN =================
+    1: [
+        {
+            id: "L1_1",
+            text: "Trong bộ thí nghiệm thực hành xác định động lượng của vật trước và sau va chạm (Bài 30), dụng cụ nào sau đây <b>không</b> được sử dụng?",
+            svg: SVGs.airTrackSetup,
+            options: [
+                { text: "Đồng hồ đo điện đa năng (hoặc lực kế).", isCorrect: true },
+                { text: "Cổng quang điện và đồng hồ đo thời gian hiện số.", isCorrect: false },
+                { text: "Băng đệm khí và bơm nén khí.", isCorrect: false },
+                { text: "Cân điện tử, hai xe trượt và tấm cản quang.", isCorrect: false }
+            ],
+            explain: "Bộ thí nghiệm xác định động lượng chỉ cần đo khối lượng (bằng cân điện tử) và thời gian chắn sáng (bằng cổng quang điện + đồng hồ hiện số), <b>không</b> sử dụng đồng hồ đo điện đa năng hay lực kế."
+        },
+        {
+            id: "L1_2",
+            text: "Trong thí nghiệm xác định động lượng của vật trước và sau va chạm, <b>băng đệm khí và bơm nén khí</b> có công dụng chính là gì?",
+            svg: SVGs.airTrackSetup,
+            options: [
+                { text: "Giảm tối đa ma sát giữa xe trượt và băng trượt.", isCorrect: true },
+                { text: "Cung cấp vận tốc ban đầu thật lớn cho hai xe trượt.", isCorrect: false },
+                { text: "Đo trực tiếp khối lượng của hai xe trượt trước va chạm.", isCorrect: false },
+                { text: "Điều khiển đóng mở đồng hồ đo thời gian hiện số.", isCorrect: false }
+            ],
+            explain: "Lớp đệm không khí phun ra từ các lỗ nhỏ trên băng đệm khí giúp nâng nhẹ xe trượt lên, làm <b>giảm ma sát</b> giữa xe trượt và băng trượt để hệ hai xe coi như hệ kín."
+        },
+        {
+            id: "L1_3",
+            text: "Trong bộ thí nghiệm Bài 30, hai <b>cổng quang điện</b> nối với đồng hồ đo thời gian hiện số có công dụng gì?",
+            svg: SVGs.lightGateDetail,
+            options: [
+                { text: "Điều khiển mở và đóng đồng hồ đo thời gian hiện số khi tấm cản quang đi qua.", isCorrect: true },
+                { text: "Đo trực tiếp khối lượng $m_1, m_2$ của hai xe trượt.", isCorrect: false },
+                { text: "Làm giảm ma sát giữa xe trượt và mặt bàn thí nghiệm.", isCorrect: false },
+                { text: "Thu nhận tia tử ngoại phát ra từ mặt trời.", isCorrect: false }
+            ],
+            explain: "Khi tấm cản quang trên xe bắt đầu chắn tia hồng ngoại ở cổng quang điện và khi vừa rời khỏi cổng, cổng quang điện sẽ phát tín hiệu <b>điều khiển mở/đóng đồng hồ đo thời gian hiện số</b>."
+        },
+        {
+            id: "L1_4",
+            text: "Trong thí nghiệm xác định động lượng của hai xe trước và sau va chạm, vectơ động lượng tổng cộng $\\vec{p}$ của hệ hai xe được xác định bằng công thức nào?",
+            svg: SVGs.softCollisionVectors,
+            options: [
+                { text: "$\\vec{p} = \\vec{p}_1 + \\vec{p}_2$", isCorrect: true },
+                { text: "$\\vec{p} = \\vec{p}_1 - \\vec{p}_2$", isCorrect: false },
+                { text: "$p = p_1 \\cdot p_2$", isCorrect: false },
+                { text: "$\\vec{p} = m_1\\vec{v}_1 - m_2\\vec{v}_2$", isCorrect: false }
+            ],
+            explain: "Động lượng của hệ hai vật là đại lượng vectơ bằng tổng các vectơ động lượng thành phần: $\\vec{p} = \\vec{p}_1 + \\vec{p}_2$."
+        },
+        {
+            id: "L1_5",
+            text: "Để hạn chế sai số khi đo thời gian tấm cản quang chắn ngang cổng quang điện trong mỗi lượt đo mới, thao tác bắt buộc trên mặt đồng hồ hiện số là gì?",
+            svg: SVGs.airTrackSetup,
+            options: [
+                { text: "Ấn nút <b>Reset</b> trên mặt đồng hồ để đưa số chỉ của đồng hồ về 0.000.", isCorrect: true },
+                { text: "Thực hiện đo liên tục các lần mà không cần ấn nút Reset.", isCorrect: false },
+                { text: "Sử dụng đồng hồ bấm giây bằng tay thay cho đồng hồ hiện số.", isCorrect: false },
+                { text: "Chỉ thực hiện đo duy nhất 1 lần để tránh sai số ngẫu nhiên.", isCorrect: false }
+            ],
+            explain: "Trước mỗi lần thả xe hoặc cắt dây, ta cần ấn nút <b>Reset</b> để đưa số chỉ đồng hồ đo thời gian hiện số về <code>0.000</code>."
+        },
+        {
+            id: "L1_6",
+            text: "Trong thí nghiệm <b>va chạm mềm</b> (hai xe gắn chốt ghim dính chặt vào nhau sau va chạm), mối liên hệ giữa vận tốc hai xe sau va chạm là:",
+            svg: SVGs.softCollisionVectors,
+            options: [
+                { text: "$v'_1 = v'_2$", isCorrect: true },
+                { text: "$v'_1 = -v'_2$", isCorrect: false },
+                { text: "$v'_1 = 2v'_2$", isCorrect: false },
+                { text: "$v'_1 = 0,5v'_2$", isCorrect: false }
+            ],
+            explain: "Sau va chạm mềm, hai xe dính chặt vào nhau thành một khối và chuyển động cùng vận tốc nên $v'_1 = v'_2$."
+        },
+        {
+            id: "L1_7",
+            text: "Trong thí nghiệm <b>va chạm mềm</b>, sau va chạm hai xe có khối lượng $m_1, m_2$ dính vào nhau và chuyển động với tốc độ $v'_1$. Độ lớn động lượng $p'$ của hệ sau va chạm được tính bởi công thức:",
+            svg: SVGs.softCollisionVectors,
+            options: [
+                { text: "$p' = (m_1 + m_2) \\cdot v'_1$", isCorrect: true },
+                { text: "$p' = m_1 \\cdot v'_1$", isCorrect: false },
+                { text: "$p' = m_2 \\cdot v'_1$", isCorrect: false },
+                { text: "$p' = (m_1 - m_2) \\cdot v'_1$", isCorrect: false }
+            ],
+            explain: "Vì hai xe dính vào nhau chuyển động cùng tốc độ $v'_1 = v'_2$ nên độ lớn động lượng của hệ sau va chạm mềm là $p' = (m_1 + m_2)v'_1$."
+        },
+        {
+            id: "L1_8",
+            text: "Trong thí nghiệm <b>va chạm đàn hồi</b> (cắt sợi dây để lò xo nén giữa hai xe bung ra), ngay sau khi lò xo bung ra thì hai xe chuyển động như thế nào?",
+            svg: SVGs.elasticCollisionVectors,
+            options: [
+                { text: "Cùng phương, ngược chiều nhau.", isCorrect: true },
+                { text: "Cùng phương, cùng chiều nhau.", isCorrect: false },
+                { text: "Xe 1 đứng yên, chỉ có xe 2 chuyển động.", isCorrect: false },
+                { text: "Hai xe dính chặt vào nhau và đứng yên.", isCorrect: false }
+            ],
+            explain: "Khi cắt sợi dây, lò xo nén ở giữa bung ra đẩy hai xe về hai phía nên hai xe chuyển động <b>cùng phương, ngược chiều nhau</b>."
+        },
+        {
+            id: "L1_9",
+            text: "Trong thí nghiệm va chạm đàn hồi, sau khi lò xo bung ra, xe 1 và xe 2 chuyển động ngược chiều nhau với tốc độ lần lượt là $v'_1$ và $v'_2$. Chọn chiều dương là chiều chuyển động của xe 1. Giá trị động lượng của hệ sau va chạm là:",
+            svg: SVGs.elasticCollisionVectors,
+            options: [
+                { text: "$p' = m_1v'_1 - m_2v'_2$", isCorrect: true },
+                { text: "$p' = m_1v'_1 + m_2v'_2$", isCorrect: false },
+                { text: "$p' = (m_1 + m_2)v'_1$", isCorrect: false },
+                { text: "$p' = (m_1 + m_2)v'_2$", isCorrect: false }
+            ],
+            explain: "Do xe 1 đi theo chiều dương ($p'_1 = +m_1v'_1$) và xe 2 đi ngược chiều dương ($p'_2 = -m_2v'_2$), nên động lượng tổng cộng của hệ là $p' = m_1v'_1 - m_2v'_2$."
+        },
+        {
+            id: "L1_10",
+            text: "Để xác định động lượng của hai xe trước và sau va chạm trong bài thực hành, phương pháp đo nào sau đây được thực hiện?",
+            svg: SVGs.lightGateDetail,
+            options: [
+                { text: "Đo khối lượng xe và thời gian tấm cản quang chắn cổng quang điện, từ đó tính gián tiếp tốc độ và động lượng.", isCorrect: true },
+                { text: "Dùng cổng quang điện đo trực tiếp giá trị động lượng của mỗi xe.", isCorrect: false },
+                { text: "Chỉ cần đo thời gian tấm cản quang đi qua cổng quang điện là kết luận được ngay động lượng.", isCorrect: false },
+                { text: "Dùng cân điện tử đo trực tiếp tốc độ và động lượng của hai xe.", isCorrect: false }
+            ],
+            explain: "Ta đo độ dài tấm cản quang $s$, khối lượng $m$ (bằng cân) và thời gian chắn sáng $t$ (bằng đồng hồ hiện số), sau đó tính gián tiếp tốc độ $v = \\dfrac{s}{t}$ và động lượng $p = mv$."
+        },
+        {
+            id: "L1_11",
+            text: "Để hạn chế sai số trong quá trình lắp đặt và thực hiện thí nghiệm trên băng đệm khí, ta cần lưu ý điều nào sau đây?",
+            svg: SVGs.airTrackSetup,
+            options: [
+                { text: "Điều chỉnh cho băng đệm khí nằm ngang, song song với mặt bàn và tấm cản quang song song với băng đệm khí.", isCorrect: true },
+                { text: "Đặt băng đệm khí nghiêng một góc lớn so với mặt bàn để xe trượt nhanh hơn.", isCorrect: false },
+                { text: "Lắp tấm cản quang vuông góc với chiều chuyển động của băng đệm khí.", isCorrect: false },
+                { text: "Tắt bơm nén khí trong lúc đẩy xe trượt va chạm.", isCorrect: false }
+            ],
+            explain: "Băng đệm khí phải được chỉnh <b>nằm ngang</b> để trọng lực cân bằng với phản lực, tránh xe tự trôi gây sai số tốc độ trước và sau va chạm."
+        },
+        {
+            id: "L1_12",
+            text: "<b>[Phép tính 1 bước]</b> Một xe trượt gắn tấm cản quang có chiều dài $s = 0,10\\text{ m}$ lướt qua cổng quang điện trong thời gian $t_1 = 0,20\\text{ s}$. Tốc độ $v_1$ của xe trượt khi đi qua cổng quang điện là bao nhiêu?",
+            svg: SVGs.lightGateDetail,
+            options: [
+                { text: "$0,50\\text{ m/s}$", isCorrect: true },
+                { text: "$0,02\\text{ m/s}$", isCorrect: false },
+                { text: "$2,00\\text{ m/s}$", isCorrect: false },
+                { text: "$0,30\\text{ m/s}$", isCorrect: false }
+            ],
+            explain: "Áp dụng công thức tính tốc độ qua cổng quang điện: $v_1 = \\dfrac{s}{t_1} = \\dfrac{0,10}{0,20} = 0,50\\text{ m/s}$."
+        }
+    ],
+
+    // ================= CẤP ĐỘ 2: 5 CÂU THÔNG HIỂU CƠ BẢN (7 - 8 ĐIỂM) =================
+    2: [
+        {
+            id: "L2_1",
+            text: "Hãy sắp xếp đúng thứ tự các bước tiến hành thí nghiệm xác định động lượng của vật trước và sau <b>va chạm mềm</b>:<br>" +
+                  "(I). Đặt xe 2 ở giữa hai cổng quang điện, đặt xe 1 ở bên ngoài hai cổng quang điện.<br>" +
+                  "(II). Đẩy xe 1 va chạm vào xe 2. Đọc trên đồng hồ các khoảng thời gian $t_1, t'_1$ và ghi vào bảng.<br>" +
+                  "(III). Lắp tấm cản quang và chốt cắm thích hợp lên xe, cân khối lượng xe và ghi vào bảng.<br>" +
+                  "(IV). Cấp điện cho bơm nén khí và đồng hồ, chọn chế độ đo thời gian chắn cổng quang điện và ấn nút Reset về 0.000.",
+            svg: SVGs.airTrackSetup,
+            options: [
+                { text: "(III) – (IV) – (I) – (II).", isCorrect: true },
+                { text: "(III) – (II) – (IV) – (I).", isCorrect: false },
+                { text: "(I) – (II) – (III) – (IV).", isCorrect: false },
+                { text: "(IV) – (III) – (I) – (II).", isCorrect: false }
+            ],
+            explain: "Quy trình chuẩn: Lắp tấm cản quang & cân khối lượng xe (III) $\\rightarrow$ Bật bơm khí, chỉnh đồng hồ & Reset về 0.000 (IV) $\\rightarrow$ Đặt vị trí hai xe (I) $\\rightarrow$ Đẩy xe 1 va chạm xe 2 và đọc kết quả $t_1, t'_1$ (II)."
+        },
+        {
+            id: "L2_2",
+            text: "Trong thí nghiệm <b>va chạm đàn hồi</b> (hai xe có gắn lò xo được buộc nén lại bằng một sợi dây ở giữa hai cổng quang điện), trước khi cắt sợi dây thì hai xe đều đứng yên. Tổng động lượng $\\vec{p}$ của hệ hai xe <b>trước khi cắt dây</b> có độ lớn bằng bao nhiêu?",
+            svg: SVGs.elasticCollisionVectors,
+            options: [
+                { text: "$p = 0\\text{ kg.m/s}$ vì cả hai xe đều đang đứng yên ($v_1 = v_2 = 0$).", isCorrect: true },
+                { text: "$p = (m_1 + m_2)\\text{ kg.m/s}$.", isCorrect: false },
+                { text: "$p > 0$ vì lò xo đang bị nén giữa hai xe.", isCorrect: false },
+                { text: "$p = m_1 - m_2\\text{ kg.m/s}$.", isCorrect: false }
+            ],
+            explain: "Trước khi cắt sợi dây, cả hai xe đều đứng yên trên băng đệm khí ($v_1 = 0,\\; v_2 = 0$) nên động lượng của mỗi xe bằng $0$, suy ra tổng động lượng của hệ trước va chạm là $p = p_1 + p_2 = 0$."
+        },
+        {
+            id: "L2_3",
+            text: "Thực hiện thí nghiệm <b>va chạm mềm</b>: Ban đầu xe 2 ($m_2 = 0,4\\text{ kg}$) đứng yên, xe 1 có khối lượng $m_1 = 0,3\\text{ kg}$ chuyển động với tốc độ $v_1 = 0,8\\text{ m/s}$ đến va chạm vào xe 2. Độ lớn động lượng $p$ của hệ hai xe <b>trước va chạm</b> là:",
+            svg: SVGs.softCollisionVectors,
+            options: [
+                { text: "$0,24\\text{ kg.m/s}$", isCorrect: true },
+                { text: "$0,56\\text{ kg.m/s}$", isCorrect: false },
+                { text: "$0,32\\text{ kg.m/s}$", isCorrect: false },
+                { text: "$0,70\\text{ kg.m/s}$", isCorrect: false }
+            ],
+            explain: "Vì trước va chạm xe 2 đứng yên ($p_2 = 0$) nên độ lớn động lượng của hệ trước va chạm chỉ bằng động lượng của xe 1:<br>$$p = p_1 + p_2 = m_1 v_1 + 0 = 0,3 \\times 0,8 = 0,24\\text{ kg.m/s}$$"
+        },
+        {
+            id: "L2_4",
+            text: "Trong thí nghiệm <b>va chạm mềm</b>, hai xe có khối lượng $m_1 = 0,2\\text{ kg}$ và $m_2 = 0,3\\text{ kg}$. Sau va chạm, hai xe dính chặt vào nhau và cùng chuyển động với tốc độ $v'_1 = v'_2 = 0,4\\text{ m/s}$. Độ lớn động lượng $p'$ của hệ <b>sau va chạm</b> là:",
+            svg: SVGs.softCollisionVectors,
+            options: [
+                { text: "$0,20\\text{ kg.m/s}$", isCorrect: true },
+                { text: "$0,08\\text{ kg.m/s}$", isCorrect: false },
+                { text: "$0,12\\text{ kg.m/s}$", isCorrect: false },
+                { text: "$0,50\\text{ kg.m/s}$", isCorrect: false }
+            ],
+            explain: "Sau va chạm mềm, hai xe dính vào nhau thành một vật có tổng khối lượng $(m_1 + m_2)$:<br>$$p' = (m_1 + m_2) \\cdot v'_1 = (0,2 + 0,3) \\times 0,4 = 0,20\\text{ kg.m/s}$$"
+        },
+        {
+            id: "L2_5",
+            text: "Khi xử lí kết quả thí nghiệm, học sinh nhận thấy tổng động lượng của hệ sau va chạm $p'$ hơi nhỏ hơn một chút so với tổng động lượng trước va chạm $p$ (ví dụ $p = 0,117\\text{ kg.m/s}$ và $p' = 0,113\\text{ kg.m/s}$). Nguyên nhân chính gây ra sự chênh lệch nhỏ này là gì?",
+            svg: SVGs.airTrackSetup,
+            options: [
+                { text: "Do vẫn còn lực cản không khí và ma sát nhỏ giữa xe trượt với băng đệm khí.", isCorrect: true },
+                { text: "Do định luật bảo toàn động lượng không đúng đối với hai xe trượt.", isCorrect: false },
+                { text: "Do khối lượng của hai xe trượt bị giảm đi sau khi va chạm.", isCorrect: false },
+                { text: "Do chiều dài tấm cản quang tự động co ngắn lại khi đi qua cổng quang điện.", isCorrect: false }
+            ],
+            explain: "Trong thực tế, băng đệm khí giúp giảm tối đa ma sát nhưng <b>vẫn còn một phần rất nhỏ lực ma sát và lực cản không khí</b>, kèm theo sai số ngẫu nhiên khi đo nên $p$ và $p'$ xấp xỉ bằng nhau."
+        }
+    ],
+
+    // ================= CẤP ĐỘ 3: 5 CÂU THÔNG HIỂU CƠ BẢN (9 - 10 ĐIỂM) =================
+    3: [
+        {
+            id: "L3_1",
+            text: "Thực hiện thí nghiệm <b>va chạm mềm</b> với tấm cản quang có chiều dài $s = 0,10\\text{ m}$. Trước va chạm, xe 2 đứng yên, còn xe 1 ($m_1 = 0,20\\text{ kg}$) đi qua cổng quang điện 1 trong thời gian $t_1 = 0,25\\text{ s}$:<br>" +
+                  "<table class='data-table'><tr><th>$m_1$ (kg)</th><th>$m_2$ (kg)</th><th>$t_1$ (s)</th><th>$v_1$ (m/s)</th><th>$p$ (kg.m/s)</th></tr>" +
+                  "<tr><td>0,20</td><td>0,30</td><td>0,25</td><td>?</td><td>?</td></tr></table>" +
+                  "Tốc độ $v_1$ của xe 1 và động lượng $p$ của hệ trước va chạm lần lượt là:",
+            svg: SVGs.lightGateDetail,
+            options: [
+                { text: "$v_1 = 0,40\\text{ m/s};\\quad p = 0,08\\text{ kg.m/s}$.", isCorrect: true },
+                { text: "$v_1 = 0,40\\text{ m/s};\\quad p = 0,20\\text{ kg.m/s}$.", isCorrect: false },
+                { text: "$v_1 = 0,25\\text{ m/s};\\quad p = 0,05\\text{ kg.m/s}$.", isCorrect: false },
+                { text: "$v_1 = 2,50\\text{ m/s};\\quad p = 0,50\\text{ kg.m/s}$.", isCorrect: false }
+            ],
+            explain: "Tính theo 2 bước cơ bản:<br>• Bước 1 (Tốc độ xe 1): $v_1 = \\dfrac{s}{t_1} = \\dfrac{0,10}{0,25} = 0,40\\text{ m/s}$.<br>• Bước 2 (Động lượng hệ trước va chạm): Vì xe 2 đứng yên nên $p = m_1 v_1 = 0,20 \\times 0,40 = 0,08\\text{ kg.m/s}$."
+        },
+        {
+            id: "L3_2",
+            text: "Trong thí nghiệm <b>va chạm mềm</b> với tấm cản quang dài $s = 0,10\\text{ m}$, sau va chạm hai xe ($m_1 = 0,20\\text{ kg}$ và $m_2 = 0,20\\text{ kg}$) dính vào nhau và đi qua cổng quang điện 2 trong thời gian $t'_1 = 0,50\\text{ s}$. Tốc độ chung $v'_1$ và động lượng $p'$ của hệ sau va chạm là:",
+            svg: SVGs.softCollisionVectors,
+            options: [
+                { text: "$v'_1 = 0,20\\text{ m/s};\\quad p' = 0,08\\text{ kg.m/s}$.", isCorrect: true },
+                { text: "$v'_1 = 0,20\\text{ m/s};\\quad p' = 0,04\\text{ kg.m/s}$.", isCorrect: false },
+                { text: "$v'_1 = 0,50\\text{ m/s};\\quad p' = 0,20\\text{ kg.m/s}$.", isCorrect: false },
+                { text: "$v'_1 = 0,05\\text{ m/s};\\quad p' = 0,02\\text{ kg.m/s}$.", isCorrect: false }
+            ],
+            explain: "• Tốc độ chung của hai xe sau va chạm: $v'_1 = v'_2 = \\dfrac{s}{t'_1} = \\dfrac{0,10}{0,50} = 0,20\\text{ m/s}$.<br>• Động lượng của hệ sau va chạm: $p' = (m_1 + m_2)v'_1 = (0,20 + 0,20) \\times 0,20 = 0,08\\text{ kg.m/s}$."
+        },
+        {
+            id: "L3_3",
+            text: "Thực hiện thí nghiệm <b>va chạm đàn hồi</b> (cắt dây để lò xo bung đẩy hai xe về hai phía ngược chiều nhau). Chọn chiều dương là chiều chuyển động của xe 1. Biết $m_1 = 0,20\\text{ kg}$, $m_2 = 0,40\\text{ kg}$ và tốc độ hai xe sau khi bung lò xo là $v'_1 = 0,60\\text{ m/s}$, $v'_2 = 0,30\\text{ m/s}$. Động lượng $p'_1$ và $p'_2$ của hai xe sau va chạm là:",
+            svg: SVGs.elasticCollisionVectors,
+            options: [
+                { text: "$p'_1 = +0,12\\text{ kg.m/s};\\quad p'_2 = -0,12\\text{ kg.m/s}$.", isCorrect: true },
+                { text: "$p'_1 = +0,12\\text{ kg.m/s};\\quad p'_2 = +0,12\\text{ kg.m/s}$.", isCorrect: false },
+                { text: "$p'_1 = -0,12\\text{ kg.m/s};\\quad p'_2 = +0,12\\text{ kg.m/s}$.", isCorrect: false },
+                { text: "$p'_1 = +0,60\\text{ kg.m/s};\\quad p'_2 = -0,30\\text{ kg.m/s}$.", isCorrect: false }
+            ],
+            explain: "• Xe 1 đi theo chiều dương nên: $p'_1 = +m_1 v'_1 = +0,20 \\times 0,60 = +0,12\\text{ kg.m/s}$.<br>• Xe 2 đi ngược chiều dương nên: $p'_2 = -m_2 v'_2 = -0,40 \\times 0,30 = -0,12\\text{ kg.m/s}$."
+        },
+        {
+            id: "L3_4",
+            text: "Trong một lần đo thực hành, học sinh tính được độ lớn động lượng của hệ trước va chạm là $p = 0,100\\text{ kg.m/s}$ và sau va chạm là $p' = 0,098\\text{ kg.m/s}$. Độ chênh lệch tương đối $\\varepsilon = \\dfrac{|p - p'|}{p}\\cdot 100\\%$ của lần đo này bằng bao nhiêu?",
+            svg: SVGs.softCollisionVectors,
+            options: [
+                { text: "$2,0\\%$", isCorrect: true },
+                { text: "$0,2\\%$", isCorrect: false },
+                { text: "$9,8\\%$", isCorrect: false },
+                { text: "$20\\%$", isCorrect: false }
+            ],
+            explain: "Thay số vào công thức tính độ chênh lệch tương đối:<br>$$\\varepsilon = \\frac{|0,100 - 0,098|}{0,100} \\cdot 100\\% = \\frac{0,002}{0,100} \\cdot 100\\% = 2,0\\%$$"
+        },
+        {
+            id: "L3_5",
+            text: "<b>[Đọc đồ thị cơ bản]</b> Đồ thị bên dưới biểu diễn quãng đường $s$ của tấm cản quang gắn trên xe 1 ($m_1 = 0,20\\text{ kg}$) đi qua cổng quang điện theo thời gian $t$. Dựa vào đường gióng trên đồ thị tại điểm $(t = 0,20\\text{ s};\\; s = 0,10\\text{ m})$, hãy tính tốc độ $v_1$ và độ lớn động lượng $p_1$ của xe 1:",
+            svg: SVGs.graphXT,
+            options: [
+                { text: "$v_1 = 0,50\\text{ m/s};\\quad p_1 = 0,10\\text{ kg.m/s}$.", isCorrect: true },
+                { text: "$v_1 = 0,50\\text{ m/s};\\quad p_1 = 0,20\\text{ kg.m/s}$.", isCorrect: false },
+                { text: "$v_1 = 0,20\\text{ m/s};\\quad p_1 = 0,04\\text{ kg.m/s}$.", isCorrect: false },
+                { text: "$v_1 = 2,00\\text{ m/s};\\quad p_1 = 0,40\\text{ kg.m/s}$.", isCorrect: false }
+            ],
+            explain: "Đọc từ đường gióng trên đồ thị: Trong thời gian $t = 0,20\\text{ s}$, xe đi được quãng đường $s = 0,10\\text{ m}$.<br>• Tốc độ của xe 1: $v_1 = \\dfrac{s}{t} = \\dfrac{0,10}{0,20} = 0,50\\text{ m/s}$.<br>• Động lượng của xe 1: $p_1 = m_1 v_1 = 0,20 \\times 0,50 = 0,10\\text{ kg.m/s}$."
+        }
+    ]
+};
+
+/* =========================================================================
+   4. QUẢN LÝ TRẠNG THÁI LÀM BÀI, ĐẢO CÂU HỎI & KIỂM SOÁT MỞ KHÓA
+   ========================================================================= */
+let currentLevel = 1;
+let level1PerfectCount = 0; // Đếm số lần đạt 12/12 ở Cấp độ 1 (cần 3 lần để mở khóa)
+let isUnlocked = false;     // Trạng thái mở khóa Cấp độ 2 & 3
+let unlockedByTeacher = false;
+
+let state = {
+    1: { answered: 0, correct: 0, total: 12, currentRoundCounted: false, questions: [] },
+    2: { answered: 0, correct: 0, total: 5, bestScore: 0, questions: [] },
+    3: { answered: 0, correct: 0, total: 5, bestScore: 0, questions: [] }
+};
+
+function shuffleArray(arr) {
+    const copy = [...arr];
+    for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+}
+
+function prepareLevelQuestions(lvl) {
+    const rawList = questionBank[lvl];
+    const shuffledQuestions = shuffleArray(rawList).map(q => {
+        return {
+            ...q,
+            shuffledOptions: shuffleArray(q.options),
+            userSelected: null
+        };
+    });
+    state[lvl].questions = shuffledQuestions;
+    state[lvl].answered = 0;
+    state[lvl].correct = 0;
+    state[lvl].currentRoundCounted = false;
+}
+
+function renderQuiz() {
+    const quizArea = document.getElementById('quizArea');
+    const currentData = state[currentLevel];
+    const letters = ['A', 'B', 'C', 'D'];
+
+    let html = '';
+    currentData.questions.forEach((q, qIdx) => {
+        html += `
+        <div class="question-card" id="qcard_${qIdx}">
+            <div class="q-header">
+                <span>CÂU HỎI ${qIdx + 1} / ${currentData.total} (Cấp độ ${currentLevel})</span>
+                <span id="qstatus_${qIdx}">Chưa trả lời</span>
+            </div>
+            <div class="q-text">${q.text}</div>
+            ${q.svg ? `<div class="svg-container">${q.svg}</div>` : ''}
+            <div class="options-list">
+                ${q.shuffledOptions.map((opt, oIdx) => `
+                    <button class="option-btn" id="opt_${qIdx}_${oIdx}" onclick="selectAnswer(${qIdx}, ${oIdx})">
+                        <span class="opt-letter">${letters[oIdx]}</span>
+                        <span>${opt.text}</span>
+                    </button>
+                `).join('')}
+            </div>
+            <div class="feedback-box" id="fb_${qIdx}"></div>
+        </div>`;
+    });
+
+    quizArea.innerHTML = html;
+    updateTopUI();
+
+    if (window.MathJax && MathJax.typesetPromise) {
+        MathJax.typesetPromise([quizArea]);
+    }
+}
+
+function selectAnswer(qIdx, oIdx) {
+    const currentData = state[currentLevel];
+    const q = currentData.questions[qIdx];
+    if (q.userSelected !== null) return;
+
+    q.userSelected = oIdx;
+    currentData.answered++;
+
+    const chosenOpt = q.shuffledOptions[oIdx];
+    const isCorrect = chosenOpt.isCorrect;
+
+    playFunnySound(isCorrect);
+
+    q.shuffledOptions.forEach((opt, idx) => {
+        const btn = document.getElementById(`opt_${qIdx}_${idx}`);
+        btn.disabled = true;
+        if (opt.isCorrect) {
+            btn.classList.add('correct');
+        } else if (idx === oIdx && !isCorrect) {
+            btn.classList.add('wrong');
+        }
+    });
+
+    const statusSpan = document.getElementById(`qstatus_${qIdx}`);
+    const fbBox = document.getElementById(`fb_${qIdx}`);
+
+    if (isCorrect) {
+        currentData.correct++;
+        statusSpan.innerHTML = '✅ Chính xác!';
+        statusSpan.style.color = 'var(--success)';
+        fbBox.className = 'feedback-box show ok';
+        fbBox.innerHTML = `<strong>🎉 Tuyệt vời! Đáp án ĐÚNG.</strong><br>${q.explain}`;
+    } else {
+        statusSpan.innerHTML = '❌ Chưa đúng';
+        statusSpan.style.color = 'var(--danger)';
+        fbBox.className = 'feedback-box show err';
+        fbBox.innerHTML = `<strong>💡 Rất tiếc! Đáp án chưa chính xác.</strong><br>${q.explain}`;
+    }
+
+    if (window.MathJax && MathJax.typesetPromise) {
+        MathJax.typesetPromise([fbBox]);
+    }
+
+    checkLevelCompletion();
+    updateTopUI();
+}
+
+function checkLevelCompletion() {
+    const d = state[currentLevel];
+    if (d.answered < d.total) return;
+
+    if (currentLevel === 1 && !d.currentRoundCounted) {
+        d.currentRoundCounted = true;
+        if (d.correct === 12) {
+            level1PerfectCount++;
+            if (level1PerfectCount >= 3) {
+                isUnlocked = true;
+                setTimeout(() => {
+                    alert("🎊 CHÚC MỪNG EM! Em đã hoàn thành 12/12 câu Cấp độ 1 đủ 3 lần! Cấp độ 2 và Cấp độ 3 đã chính thức MỞ KHÓA!");
+                }, 200);
+            } else {
+                setTimeout(() => {
+                    alert(`👏 Giỏi lắm! Em đã đạt 12/12 câu Cấp độ 1 (Lần ${level1PerfectCount}/3).\nHãy bấm nút "Đảo đề & Làm lại Cấp độ này" thêm ${3 - level1PerfectCount} lần đạt 12/12 nữa để mở khóa Cấp độ 2, 3 nhé!`);
+                }, 200);
+            }
+        } else {
+            setTimeout(() => {
+                alert(`📌 Em đạt ${d.correct}/12 câu ở lượt này.\nYêu cầu bắt buộc: Phải đúng tuyệt đối 12/12 câu đủ 3 lần mới mở khóa Cấp độ tiếp theo. Hãy bấm "Đảo đề & Làm lại Cấp độ này" để thử lại nhé!`);
+            }, 200);
+        }
+    } else if (currentLevel > 1) {
+        if (d.correct > d.bestScore) d.bestScore = d.correct;
+    }
+}
+
+function updateTopUI() {
+    document.getElementById('badge1').innerText = `Đạt 12/12: ${level1PerfectCount}/3 lần (Hiện tại: ${state[1].correct}/12)`;
+    
+    const tab2 = document.getElementById('tab2');
+    const tab3 = document.getElementById('tab3');
+    const badge2 = document.getElementById('badge2');
+    const badge3 = document.getElementById('badge3');
+
+    if (isUnlocked) {
+        tab2.classList.remove('locked');
+        tab3.classList.remove('locked');
+        tab2.querySelector('div').innerText = '🔓 CẤP ĐỘ 2 (7 - 8 Điểm: 5 câu)';
+        tab3.querySelector('div').innerText = '🔓 CẤP ĐỘ 3 (9 - 10 Điểm: 5 câu)';
+        badge2.innerText = `Đúng: ${state[2].correct}/5 câu`;
+        badge3.innerText = `Đúng: ${state[3].correct}/5 câu`;
+    } else {
+        badge2.innerText = 'Chưa mở khóa';
+        badge3.innerText = 'Chưa mở khóa';
+    }
+
+    [1, 2, 3].forEach(lvl => {
+        const t = document.getElementById(`tab${lvl}`);
+        if (lvl === currentLevel) t.classList.add('active');
+        else t.classList.remove('active');
+    });
+
+    const statusTitle = document.getElementById('statusTitle');
+    const statusDesc = document.getElementById('statusDesc');
+    if (currentLevel === 1) {
+        statusTitle.innerText = `📌 Cấp độ 1 (Đã làm: ${state[1].answered}/12 câu | Đúng: ${state[1].correct}/12):`;
+        statusDesc.innerHTML = isUnlocked
+            ? `✅ Đã mở khóa tất cả các cấp độ! (Số lần đạt 12/12: <b>${level1PerfectCount}</b> lần)`
+            : `Cần đúng <b>12/12 câu</b> đủ <b>3 lần</b> để mở khóa Cấp độ 2 & 3 (Hiện tại: <b>${level1PerfectCount}/3 lần</b>).`;
+    } else {
+        statusTitle.innerText = `📌 Cấp độ ${currentLevel} (Đã làm: ${state[currentLevel].answered}/5 câu | Đúng: ${state[currentLevel].correct}/5):`;
+        statusDesc.innerHTML = `Các câu hỏi Thông hiểu cơ bản giúp nắm vững bản chất và công thức thực hành.`;
+    }
+}
+
+function switchLevel(lvl) {
+    if (lvl > 1 && !isUnlocked) {
+        playFunnySound(false);
+        alert("🔒 Cấp độ này đang khóa!\nHọc sinh bắt buộc phải hoàn thành 12 câu Cấp độ 1 và đạt đúng 12/12 câu đủ 3 lần mới được chuyển lên.\n(Dành cho Giáo viên: Nhập mật mã vào ô **** để mở khóa).");
+        return;
+    }
+    currentLevel = lvl;
+    renderQuiz();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function retryCurrentLevel() {
+    prepareLevelQuestions(currentLevel);
+    renderQuiz();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Chế độ Mở khóa cho Giáo viên (Ẩn mã hoàn toàn, kiểm tra ngầm)
+function unlockByTeacher() {
+    const inputEl = document.getElementById('teacherCode');
+    const code = inputEl.value.trim();
+    // Kiểm tra mã 1819 mà không hiển thị lộ mã ra thông báo
+    if (code === '1819') {
+        isUnlocked = true;
+        unlockedByTeacher = true;
+        inputEl.value = '';
+        playFunnySound(true);
+        updateTopUI();
+        alert("🔓 Xác nhận mật mã Giáo viên thành công! Đã mở khóa toàn bộ Cấp độ 2 và Cấp độ 3.");
+    } else {
+        inputEl.value = '';
+        playFunnySound(false);
+        alert("❌ Mật mã Giáo viên không đúng!");
+    }
+}
+
+/* =========================================================================
+   5. BÁO CÁO HỌ TÊN & KẾT QUẢ THỰC HIỆN
+   ========================================================================= */
+function showReportModal() {
+    const name = document.getElementById('studentName').value.trim() || "Chưa nhập Họ tên";
+    const cls = document.getElementById('studentClass').value.trim() || "Chưa nhập Lớp";
+
+    const totalCorrect = state[1].correct + state[2].correct + state[3].correct;
+    const score10 = ((totalCorrect / 22) * 10).toFixed(2);
+
+    const reportHTML = `
+        <p>👤 <b>Họ và tên học sinh:</b> ${name}</p>
+        <p>🏫 <b>Lớp:</b> ${cls}</p>
+        <hr style="margin:8px 0; border:none; border-top:1px solid #cbd5e1;">
+        <p>📘 <b>Chuyên đề:</b> Bài 30 - Thực hành xác định động lượng trước và sau va chạm</p>
+        <p>🟢 <b>Cấp độ 1 (12 câu Nhận biết):</b> Đúng ${state[1].correct}/12 câu <i>(Số lần đạt 12/12: <b>${level1PerfectCount} lần</b>)</i></p>
+        <p>🟡 <b>Cấp độ 2 (5 câu 7-8 điểm):</b> Đúng ${state[2].correct}/5 câu</p>
+        <p>🔴 <b>Cấp độ 3 (5 câu 9-10 điểm):</b> Đúng ${state[3].correct}/5 câu</p>
+        <hr style="margin:8px 0; border:none; border-top:1px solid #cbd5e1;">
+        <p>🌟 <b>Tổng số câu đúng hiện tại:</b> <b>${totalCorrect} / 22 câu</b> (Quy đổi: <b>${score10} / 10 điểm</b>)</p>
+        <p>🔑 <b>Trạng thái mở khóa:</b> ${unlockedByTeacher ? "Mở bằng mật mã Giáo viên" : (isUnlocked ? "Học sinh tự vượt qua 3 lần 12/12" : "Chưa mở khóa Cấp 2, 3")}</p>
+    `;
+    document.getElementById('reportContent').innerHTML = reportHTML;
+    document.getElementById('reportModal').classList.add('active');
+}
+
+function closeReportModal() {
+    document.getElementById('reportModal').classList.remove('active');
+}
+
+function copyReport() {
+    const text = document.getElementById('reportContent').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        alert("✅ Đã sao chép phiếu báo cáo kết quả! Em có thể dán (Paste) gửi cho Giáo viên.");
+    });
+}
+
+window.onload = function() {
+    prepareLevelQuestions(1);
+    prepareLevelQuestions(2);
+    prepareLevelQuestions(3);
+    renderQuiz();
+};
+</script>
+</body>
+</html>
